@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<!--
+To change this license header, choose License Headers in Project Properties.
+To change this template file, choose Tools | Templates
+and open the template in the editor.
+-->
+<html>
+    <head>
+        <title>Money Mix-up</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+        <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+        <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+        <script src="jquery.ui.touch-punch.min.js"></script>
+        <style>
+            html, body {
+                height: 100%;
+                width: 100%;
+                margin: 0;
+                min-width: 190px;
+                background-color: rgb(170, 238, 255);
+                position: relative;
+            }
+            .header {
+                height: 50px;
+                width: 100%;
+                font-size: 11vw;
+                font-weight: bold;
+                text-align: center;
+                overflow: hidden;
+            }
+            .main-ui-holder {
+                position: absolute;
+                top: 60px;
+                left: 0;
+                height: calc(100% - 60px);
+                min-width: 100%;
+                width: 100%;
+            }
+            #root-container {
+                margin: 0px;
+                zoom: 1;
+                vertical-align: top;
+                justify-content: space-between;
+            }
+            #info {
+                z-index: 10;
+                font-size: 7vw;
+                vertical-align: bottom;
+                text-align: center;
+                pointer-events: none;
+            }
+            @media screen and (min-width: 570px) {
+                #info {
+                   font-size: 40px;
+                }
+            }
+            @media screen and (min-width: 370px) {
+                .header {
+                    font-size: 40px;
+                }
+            }
+            .hide-object {
+                display: none;
+            }
+            .show-root-container {
+                display: flex;
+            }
+            .show-info {
+                display: table;
+            }
+            .coin {
+                height: auto;
+                vertical-align: middle;
+                text-align: center;
+            }
+            .penny {
+                width: 60px;
+            }
+            .dime {
+                width: 50px;
+            }
+            .nickel {
+                width: 80px;
+            }
+            .quarter {
+                width: 90px;
+            }
+            .optionbutton {
+                width: 110px;
+                height: 50px;
+                font-size: 22px;
+                margin: 2px;
+            }
+            #options {
+                width: 120px;
+                min-width: 120px;
+                display: block;
+            }
+            #coins, #options {
+                
+                margin: 0px;
+                padding: 0px;
+            }
+            #coins {
+                flex-grow: 1;
+                max-width: 500px;
+            }
+            .coin-holder {
+                display: inline-block;
+                position: relative;
+                width: auto;
+                height: auto;
+                
+                margin: 0;
+            }
+            .coin-holder img {
+                max-height: 100%;  
+                max-width: 100%;
+                margin: 5px;
+                /*
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                -ms-transform: translate(-50%, -50%);
+                transform: translate(-50%, -50%); */
+            }
+            #coin-selection {
+                max-width: 300px;
+                display: block;
+            }
+            #money-bag {
+                margin-top: 5px;
+                max-width: 200px;
+                height: auto;
+            }
+            #startButton {
+                width: 100px;
+                height: 30px;
+            }
+            #choose-money-type {
+                text-align: center;
+            }
+            .option-coin {
+                width: 80px;
+                height: auto;
+            }
+            label {
+                margin: 5px;
+            }
+            .t-dialog {
+                display: none;
+            }
+            .unselectable {
+                pointer-events: none;
+                -moz-user-select: none;
+                -webkit-user-select: none;
+                -ms-user-select: none;
+                user-select: none;
+            }
+            .face {
+                width: 100px;
+            }
+            #happy-face {
+                
+            }
+            #sad-face {
+                
+            }
+            .show-happy-face {
+                
+            }
+            .show-sad-face {
+                
+            }
+            #backButton {
+                position: absolute;
+                bottom: 0;
+                left: 0;
+                width: 80px;
+                height: 30px;
+            }
+            #correctDialog, #info-text {
+                text-align: center;
+            }
+            .noTitleStuff .ui-dialog-titlebar {display:none}
+            
+        </style>
+        <!--[if lte IE 6]>
+        <style type="text/css">
+            #container {
+                height: 100%;
+            }
+        </style>
+        <![endif]-->
+        
+        <script>
+            var optionButtons = [];
+            var optionButtonValues = [];
+            var checkboxes = [];
+            var correctOption = 0;
+            var correctValue = 0;
+            var bound = 20;
+            var possibleCoinIndexes = [];
+            $(function() {
+                cashRegisterSound = new Audio('cashregister.mp3');
+                wrongSound = new Audio('wrong00.mp3');
+                $( "input" ).checkboxradio({
+                    icon: false
+                });
+                $( "#startButton").click(function() {
+                    possibleCoinIndexes = [];
+                    for(var i = 0; i < 4; i++) {
+                        if(checkboxes[i].checked)
+                            possibleCoinIndexes.push(i);
+                    }
+                    if(possibleCoinIndexes.length === 0) {
+                        $("#errorDialog1").dialog();
+                        return;
+                    }
+                    
+                    showInfo("choose-money-type", false);
+                    showInfo("root-container", true);
+                    $("#correctDialog").dialog({ dialogClass: 'noTitleStuff' });
+                    $("#correctDialog").dialog('close');
+                    $("#howToDialog").dialog({ modal: true});
+                    generate();
+                });
+                $( "#backButton").click(function() {
+                    showInfo("choose-money-type", true);
+                    showInfo("root-container", false);
+                });
+                /* Initialize the option and checkbox buttons */
+                for(var i = 0; i < 4; i++) {
+                    optionButtons[i] = $("#option" + (i + 1))[0];
+                    $(optionButtons[i]).button();
+                    optionButtons[i].innerHTML = "Option " + (i + 1);
+                    $( optionButtons[i]).click(buttonClick);
+                }
+                for(var i = 0; i < 4; i++) {
+                    checkboxes[i] = $("#checkbox-" + (i + 1))[0];
+                }
+            });
+            var coinMap = new Map();
+            coinMap.set("penny",   "penny.svg");
+            coinMap.set("nickel", "nickel.png");
+            coinMap.set("dime", "dime.svg");
+            coinMap.set("quarter", "quarter.svg");
+
+            var coinValueMap = new Map();
+            coinValueMap.set("penny",   1);
+            coinValueMap.set("nickel", 5);
+            coinValueMap.set("dime", 10);
+            coinValueMap.set("quarter", 25);
+            var coinNames = [
+                "penny",
+                "nickel",
+                "dime",
+                "quarter"
+            ];
+            function buttonClick() {
+                /* Rip the index of the button out of the id. */
+                enableButtons(false);
+                var num = parseInt($(this).attr('id').substring(6, 7)) - 1;
+                var isCorrect = optionButtonValues[num] === correctValue;
+                showInfo("happy-face", isCorrect);
+                showInfo("sad-face", !isCorrect);
+                if(isCorrect) {
+                    cashRegisterSound.play();
+                } else
+                    wrongSound.play();
+                $("#info-text")[0].innerHTML = "Correct answer: " + formatMoney(correctValue);
+                $("#correctDialog").dialog({ dialogClass: 'noTitleStuff' });
+                setTimeout(generate, 4000);
+            }
+            function showInfo(id, show) {
+                if(id === undefined)
+                    id = "info";
+                if(show === undefined)
+                    show = true;
+                var info = $("#" + id)[0];
+                info.classList.remove("hide-object");
+                info.classList.remove("show-" + id);
+                if(show) {
+                    info.classList.add("show-" + id);
+                } else {
+                    info.classList.add("hide-object");
+                }
+            }
+            function formatMoney(cents) {
+                if(cents < 100)
+                    return cents + " &#162;";
+                else
+                    return "$" + parseFloat(Math.round((cents / 100) * 100) / 100).toFixed(2);
+            }
+            function lowerBound(value) {
+                return value + Math.max(-value, -bound);
+            }
+            function upperBound(value) {
+                return value + bound;
+            }
+            function checkValues(num) {
+                for(var i = 0; i < 4; i++) {
+                    if(num === optionButtonValues[i])
+                        return false;
+                }
+                return true;
+            }
+            function generateRandom(min, max, ignoreValue, checkAllValues) {
+                if(ignoreValue === undefined)
+                    ignoreValue = false;
+                if(checkAllValues === undefined)
+                    checkAllValues = false;
+                var num = Math.floor(Math.random() * (max - min + 1)) + min;
+                if(ignoreValue || num !== correctValue) {
+                    if((!checkAllValues || checkValues(num))) {
+                        return num;
+                    }
+                }
+                return generateRandom(min, max, ignoreValue, checkAllValues);
+            }
+            function enableButtons(enable) {
+                if(enable === undefined)
+                    enable = true;
+                for(var i = 0; i < 4; i++) {
+                    if(!enable)
+                        $(optionButtons[i]).button("disable");
+                    else
+                        $(optionButtons[i]).button("enable");
+                }
+            }
+            function generate() {
+                clearCoins();
+                $("#correctDialog").dialog('close');
+                /* Temporarily set the correct value out of range for generating
+                 * some unrestricted random numbers.
+                 */
+                correctValue = -1;
+                correctOption = generateRandom(0, 3);
+                var numCoins = generateRandom(1, 9);
+                correctValue = 0;
+                for(var i = 0; i < numCoins; i++) {
+                    var coinNameIndex = possibleCoinIndexes[generateRandom(0, possibleCoinIndexes.length - 1, true)];
+                    var coinName = coinNames[coinNameIndex];
+                    makeCoin(coinName);
+                    correctValue += coinValueMap.get(coinName);
+                }
+                for(var i = 0; i < 4; i++) {
+                    optionButtonValues[i] = -1;
+                }
+                for(var i = 0; i < 4; i++) {
+                    if(i === correctOption) {
+                        optionButtons[i].innerHTML = formatMoney(correctValue); 
+                        optionButtonValues[i] = correctValue;
+                    } else {
+                        optionButtonValues[i] = generateRandom(lowerBound(correctValue), upperBound(correctValue), false, true);
+                        optionButtons[i].innerHTML = formatMoney(optionButtonValues[i]);
+                    }
+                }
+                enableButtons();
+            }
+            function clearCoins() {
+                $("#coins").empty();
+            }
+            function makeCoin(name) {
+                var holder = document.createElement("div");
+                holder.classList.add("coin-holder");
+                var img = document.createElement("img");
+                img.src = coinMap.get(name);
+                img.alt = name;
+                img.classList.add("coin");
+                img.classList.add("unselectable");
+                img.classList.add(name);
+                holder.appendChild(img);
+                
+                $("#coins")[0].appendChild(holder);
+            }
+        </script>
+    </head>
+    <body>
+        <div class="t-dialog" title="Error" id="errorDialog1">
+            You must choose at least one coin type.
+            <p>
+            <center><button class="ui-button ui-widget ui-corner-all"
+                        onclick="$('#errorDialog1').dialog('close');">OK</button></center>
+        </div>
+        <div class="t-dialog" title="How to play" id="howToDialog">
+            Count the coins, and click on the correct answer.
+            <p>
+            <center><button class="ui-button ui-widget ui-corner-all"
+                        onclick="$('#howToDialog').dialog('close');">OK</button></center>
+        </div>
+        <div class="unselectable header">Money Mix-up</div>
+        <div class="main-ui-holder" id="choose-money-type">
+            <div>
+                <center>
+                    <fieldset id="coin-selection">
+                        <legend>Choose one or more coins</legend>
+                        <label for="checkbox-1">
+                            Pennies<br><img src="penny.svg" alt="penny" class="unselectable option-coin coin penny"/>
+                        </label>
+                        <input type="checkbox" name="checkbox-1" id="checkbox-1">
+                        <label for="checkbox-2">
+                            Nickels<br><img src="nickel.png" alt="nickel" class="unselectable option-coin coin nickel"/>
+                        </label>
+                        <input type="checkbox" name="checkbox-2" id="checkbox-2">
+                        <label for="checkbox-3">
+                            Dimes<br><img src="dime.svg" alt="dime" class="unselectable option-coin coin dime"/>
+                        </label>
+                        <input type="checkbox" name="checkbox-3" id="checkbox-3">
+                        <label for="checkbox-4">
+                            Quarters<br><img src="quarter.svg" alt="quarter" class="unselectable option-coin coin quarter"/>
+                        </label>
+                        <input type="checkbox" name="checkbox-4" id="checkbox-4">
+                    </fieldset>
+                </center>
+                <button id="startButton" class="ui-button ui-widget ui-corner-all">Start</button>
+            </div>
+            <img src="moneybag.svg" alt="Money bag" id="money-bag" class="unselectable"/>
+        </div>
+        <div class="main-ui-holder hide-object" id="root-container">
+            
+            <div id="coins">
+                <!-- filled by script -->
+            </div>
+            <div id="options">
+                <button id="option1" class="optionbutton"></button>
+                <button id="option2" class="optionbutton"></button>
+                <button id="option3" class="optionbutton"></button>
+                <button id="option4" class="optionbutton"></button>
+            </div>
+            <button id="backButton" class="ui-button ui-widget ui-corner-all">Back</button>
+            
+        </div>
+        <div class="unselectable t-dialog" id="correctDialog">
+            <img class="unselectable face" id="happy-face" src="happy.png" alt="Smiley face"/>
+            <img class="unselectable face" id="sad-face" src="sad.png" alt="Smiley face"/>  
+            <div class="unselectable" id="info-text" style="display: table-cell; vertical-align: bottom;">
+                Correct answer: 100 &#162;
+            </div>
+        </div>
+    </body>
+</html>
