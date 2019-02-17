@@ -181,7 +181,7 @@ and open the template in the editor.
                 width: 80px;
                 height: 30px;
             }
-            #correctDialog, #info-text {
+            #correctDialog, #endDialog, #info-text {
                 text-align: center;
             }
             .noTitleStuff .ui-dialog-titlebar {display:none}
@@ -202,6 +202,7 @@ and open the template in the editor.
             var correctOption = 0;
             var correctValue = 0;
             var bound = 20;
+            var numQuestions = 0;
             var possibleCoinIndexes = [];
             $(function() {
                 cashRegisterSound = new Audio('cashregister.mp3');
@@ -210,6 +211,7 @@ and open the template in the editor.
                     icon: false
                 });
                 $( "#startButton").click(function() {
+                    numQuestions = 0;
                     possibleCoinIndexes = [];
                     for(var i = 0; i < 4; i++) {
                         if(checkboxes[i].checked)
@@ -227,7 +229,13 @@ and open the template in the editor.
                     $("#howToDialog").dialog({ modal: true});
                     generate();
                 });
-                $( "#backButton").click(function() {
+                $( ".backButton").click(function() {
+                    try {
+                        $("#correctDialog").dialog('close');
+                    } catch(err) {}
+                    try {
+                        $("#endDialog").dialog('close');
+                    } catch(err) {}
                     showInfo("choose-money-type", true);
                     showInfo("root-container", false);
                 });
@@ -270,9 +278,16 @@ and open the template in the editor.
                     cashRegisterSound.play();
                 } else
                     wrongSound.play();
+                numQuestions++;
                 $("#info-text")[0].innerHTML = "Correct answer: " + formatMoney(correctValue);
                 $("#correctDialog").dialog({ dialogClass: 'noTitleStuff' });
-                setTimeout(generate, 4000);
+                if(numQuestions < 10)
+                    setTimeout(generate, 4000);
+                else {
+                    setTimeout(function() {
+                        $("#endDialog").dialog({ modal: true, dialogClass: 'noTitleStuff' });
+                    }, 4000);
+                }
             }
             function showInfo(id, show) {
                 if(id === undefined)
@@ -430,7 +445,7 @@ and open the template in the editor.
                 <button id="option3" class="optionbutton"></button>
                 <button id="option4" class="optionbutton"></button>
             </div>
-            <button id="backButton" class="ui-button ui-widget ui-corner-all">Back</button>
+            <button id="backButton" class="backButton ui-button ui-widget ui-corner-all">Back</button>
             
         </div>
         <div class="unselectable t-dialog" id="correctDialog">
@@ -439,6 +454,11 @@ and open the template in the editor.
             <div class="unselectable" id="info-text" style="display: table-cell; vertical-align: bottom;">
                 Correct answer: 100 &#162;
             </div>
+        </div>
+        <div class="t-dialog" id="endDialog">
+            <b>Congratulations! You reached the end!</b>
+            <p>
+            <button id="backButton2" class="backButton ui-button ui-widget ui-corner-all">Back</button>
         </div>
     </body>
 </html>
